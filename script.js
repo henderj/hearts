@@ -81,9 +81,9 @@ function doHeartDraw(){
     ctx.fillText(getMessage(size), centerX, centerY);
 
     // display size for debugging
-    ctx.font = "30px Arial";
-    ctx.textAlign = "left";
-    ctx.fillText(size, 10, 50);
+    // ctx.font = "30px Arial";
+    // ctx.textAlign = "left";
+    // ctx.fillText(size, 10, 50);
 }
 
 function drawHeart(size) {
