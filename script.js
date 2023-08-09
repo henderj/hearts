@@ -65,7 +65,7 @@ class Heart {
     }
 
     isOutOfScreen() {
-        return this.x < 0 || this.x > width || this.y > height;
+        return this.x + this.size < 0 || this.x - this.size > width || this.y - this.size > height;
     }
 }
 
@@ -78,7 +78,7 @@ function draw() {
     });
 
     ctx.fillStyle = "#000000";
-    ctx.font = "30px Arial";
+    ctx.font = "60px Arial";
     ctx.textAlign = "center";
 
     // print time until wedding in the format of "X days, Y hours, Z minutes, A seconds" in the center of the screen
@@ -89,7 +89,9 @@ function draw() {
     const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
     const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
 
-    ctx.fillText(days + " days, " + hours + " hours, " + minutes + " minutes, " + seconds + " seconds", centerX, centerY);
+    const lineHeight = 70;
+    ctx.fillText(days + " days, " + hours + " hours", centerX, centerY + lineHeight * -1);
+    ctx.fillText(minutes + " minutes, " + seconds + " seconds", centerX, centerY + lineHeight);
 }
 
 let timeSinceLastHeart = 0;
