@@ -11,37 +11,14 @@ class Emoji {
 }
 
 let size = 1;
-const baseSize = 1;
 const baseImageSize = 64;
-const limit = 60;
+const gravity = 0.2;
 
-const increaseRate = 1;
-let decreaseRate = 0.01;
-const baseDecreaseRate = decreaseRate;
-const decreaseAcceleration = 1.01;
-
-let finished = false;
+// wedding time: Aug 18, 2023 at 10:30 AM MST
+const weddingTime = new Date("August 18, 2023 10:30:00").getTime();
 
 const backgroundColor = "#ffffff";
 
-
-const messages = {
-    0: "click me!",
-    2: "keep clicking!",
-    10: "faster!",
-    20: "almost there!",
-    30: "just kidding ;)",
-    40: "ok now you're almost there :)",
-    50: "just a little bit more",
-}
-
-function getMessage(size) {
-    let index = Math.floor(size);
-    while (!(index in messages)) {
-        index--;
-    }
-    return messages[index];
-}
 
 // initialize canvas
 let canvas = document.getElementById("canvas");
@@ -62,141 +39,89 @@ let miniHeartEmojis = [heart, kiss, kiss2, smile, smile2];
 
 let miniHearts = [];
 
+class Heart {
+    constructor(emoji) {
+        this.x = width / 2 + Math.random() * 20 - 10;
+        this.y = height / 2 + Math.random() * 20 - 10;
+        this.size = baseImageSize + Math.random() * 10 - 5;
+        this.image = emoji.image;
+
+        this.vx = Math.random() * 20 - 10;
+        this.vy = Math.random() * -10 - 5;
+    }
+
+    update() {
+        this.vy += gravity;
+
+        this.x += this.vx;
+        this.y += this.vy;
+    }
+
+    draw() {
+        let x = this.x;
+        let y = this.y;
+        let size = this.size;
+        ctx.drawImage(this.image, x, y, size, size);
+    }
+
+    isOutOfScreen() {
+        return this.x < 0 || this.x > width || this.y > height;
+    }
+}
+
 function draw() {
-    if (finished) {
-        doFinishedDraw();
-    } else {
-        doHeartDraw();
-    }
-}
-
-function doHeartDraw(){
-    ctx.clearRect(0, 0, width, height);
     ctx.fillStyle = backgroundColor;
     ctx.fillRect(0, 0, width, height);
-    ctx.fillStyle = "#000000";
-    drawHeart(size);
-    ctx.font = "30px Arial";
-    ctx.textAlign = "center";
-    ctx.fillText(getMessage(size), centerX, centerY);
 
-    // display size for debugging
-    // ctx.font = "30px Arial";
-    // ctx.textAlign = "left";
-    // ctx.fillText(size, 10, 50);
-}
+    miniHearts.forEach((heart) => {
+        heart.draw();
+    });
 
-function drawHeart(size) {
-    let imageSize = baseImageSize * size;
-    let x = centerX - imageSize / 2;
-    let y = centerY - imageSize / 2;
-    ctx.drawImage(heart.image, x, y, imageSize, imageSize);
-}
-
-function doFinishedDraw() {
-    ctx.clearRect(0, 0, width, height);
-    ctx.fillStyle = backgroundColor;
-    ctx.fillRect(0, 0, width, height);
     ctx.fillStyle = "#000000";
     ctx.font = "30px Arial";
     ctx.textAlign = "center";
-    ctx.fillText("happy national girlfriend day!", centerX, centerY);
-    
-    drawMiniHearts();
+
+    // print time until wedding in the format of "X days, Y hours, Z minutes, A seconds" in the center of the screen
+    const time = new Date().getTime();
+    const timeDiff = weddingTime - time;
+    const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
+
+    ctx.fillText(days + " days, " + hours + " hours, " + minutes + " minutes, " + seconds + " seconds", centerX, centerY);
 }
 
+let timeSinceLastHeart = 0;
+let lastFrameTime = new Date().getTime();
 function update() {
-    if (finished) {
-        doFinishedUpdate();
-    } else {
-        doHeartUpdate();
+    const time = new Date().getTime();
+    const timeDiff = weddingTime - time;
+    const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+
+    const heartsPerSecond = 10 - days;
+    const timeBetweenHearts = 1000 / heartsPerSecond;
+
+    const deltaTime = time - lastFrameTime;
+    timeSinceLastHeart += deltaTime;
+    if (timeSinceLastHeart > timeBetweenHearts) {
+        timeSinceLastHeart = 0;
+        let emoji = miniHeartEmojis[Math.floor(Math.random() * miniHeartEmojis.length)];
+        miniHearts.push(new Heart(emoji));
     }
+
+    lastFrameTime = time;
+
+    miniHearts.forEach((heart) => {
+        heart.update();
+    });
+
+    miniHearts = miniHearts.filter((heart) => {
+        return !heart.isOutOfScreen();
+    });
 }
 
-function doFinishedUpdate() {
-    // update mini heart velocities based on gravity
-    for (let i = 0; i < miniHearts.length; i++) {
-        let miniHeart = miniHearts[i];
-        miniHeart.vy += 0.1;
-    }
 
-    // update mini heart positions
-    for (let i = 0; i < miniHearts.length; i++) {
-        let miniHeart = miniHearts[i];
-        miniHeart.x += miniHeart.vx;
-        miniHeart.y += miniHeart.vy;
-    }
-
-    // check if mini hearts are out of bounds
-    for (let i = 0; i < miniHearts.length; i++) {
-        let miniHeart = miniHearts[i];
-        if (miniHeart.x + baseImageSize < 0 || miniHeart.x - baseImageSize > width || miniHeart.y - baseImageSize > height) {
-            miniHearts.splice(i, 1);
-            i--;
-        }
-    }
-
-    // check if all mini hearts are gone
-    if (miniHearts.length == 0) {
-        finished = false;
-        size = 1;
-        decreaseRate = baseDecreaseRate;
-    }
-}
-
-function drawMiniHearts() {
-    for (let i = 0; i < miniHearts.length; i++) {
-        let miniHeart = miniHearts[i];
-        let x = miniHeart.x;
-        let y = miniHeart.y;
-        let size = miniHeart.size;
-        let imageSize = baseImageSize * size;
-        let image = miniHeart.image;
-        ctx.drawImage(image, x, y, imageSize, imageSize);
-    }
-}
-
-function doHeartUpdate() {
-    if (size > limit) {
-        finish();
-    }
-    if (size > baseSize) {
-        size -= decreaseRate;
-        decreaseRate *= decreaseAcceleration;
-    } else {
-        size = baseSize;
-    }
-}
-
-function finish() {
-    finished = true;
-    spawnMiniHearts(heart, 100);
-    spawnMiniHearts(kiss, 5);
-    spawnMiniHearts(kiss2, 5);
-    spawnMiniHearts(smile, 5);
-    spawnMiniHearts(smile2, 5);
-    console.log("finished")
-}
-
-function spawnMiniHearts(emoji, number) {
-    for (let i = 0; i < number; i++) {
-        let x = width / 2 + Math.random() * 20 - 10;
-        let y = height / 2 + Math.random() * 20 - 10;
-        let angle = Math.random() * Math.PI;
-        let speed = Math.random() * 15 + 1;
-        let vx = Math.cos(angle) * speed;
-        let vy = Math.sin(angle) * -speed;
-        let size = Math.random() * 0.5 + 0.5;
-        miniHearts.push({
-            x: x,
-            y: y,
-            vx: vx,
-            vy: vy,
-            size: size,
-            image: emoji.image
-        });
-    }
-}
 function loop() {
     update();
     draw();
@@ -206,6 +131,16 @@ function loop() {
 loop();
 
 canvas.addEventListener("click", function (e) {
-    size += increaseRate;
-    decreaseRate = baseDecreaseRate;
+    let x = e.pageX;
+    let y = e.pageY;
+
+    let emoji = miniHeartEmojis[Math.floor(Math.random() * miniHeartEmojis.length)];
+    let heart = new Heart(emoji);
+    heart.x = x - heart.size / 2;
+    heart.y = y - heart.size / 2;
+    miniHearts.push(heart);
+
+    e.preventDefault();
+
+    return false;
 });
